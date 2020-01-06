@@ -1,0 +1,52 @@
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1+"
+    }
+}
+
+group = 'org.cryptocurrency-testing'
+version = '0.0.1'
+
+apply plugin: 'com.jfrog.bintray'
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+    apply plugin: 'maven'
+    apply plugin: 'java'
+}
+
+subprojects {
+    configurations {
+        published
+    }
+    dependencies {
+        testCompile 'junit:junit:4.7'
+    }
+}
+
+bintray {
+    user = project.hasProperty('bintray.user') ? project.property('bintray.user') : System.getenv('BINTRAY_USER')
+    key = project.hasProperty('bintray.apiKey') ? project.property('bintray.apiKey') : System.getenv('BINTRAY_API_KEY')
+    filesSpec {
+        from 'bin/'
+        into '.'
+    }
+    pkg {
+        repo = 'embedded-bitcoind-binaries'
+        userOrg = 'cryptocurrency-testing'
+        name = 'embedded-bitcoind-binaries'
+        desc = 'Embedded bitcoind binaries for tests'
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries.git'
+        version {
+            name = '0.0.1'
+        }
+    }
+}
