@@ -9,44 +9,228 @@ buildscript {
     }
 }
 
-group = 'org.cryptocurrency-testing'
-version = '0.0.1'
+plugins {
+    id "de.undercouch.download" version "3.4.3"
+}
 
-apply plugin: 'com.jfrog.bintray'
+def platformReleases = [
+        [
+                "name": "mac",
+                "platform": "osx64",
+        ],
+        [
+                "name": "linux",
+                "platform": "x86_64-linux-gnu",
+        ],
+]
+def bitcoinVersion = "0.19.0.1"
 
 allprojects {
+    apply plugin: 'java'
+    //apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.bintray'
+
+    group 'org.cryptocurrency-testing'
+    version = "0.0.2"
+    archivesBaseName = "embedded-bitcoind-binaries"
+    sourceCompatibility = 1.6
+
     repositories {
         jcenter()
     }
-    apply plugin: 'maven'
-    apply plugin: 'java'
+
+    configurations {
+        bundles
+    }
+}
+
+
+
+project(':bitcoind-artifacts') {
+    platformReleases.each { platform ->
+//        task "build${platform.name}Bundle"(group: "build (${platform.name})", type: Exec) {
+//            commandLine 'sh', "/usr/bin/wget", "https://bitcoin.org/bin/bitcoin-core-${bitcoinVersion}/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz -P bin/ \n"
+//        }
+        task "download${platform.name}Bundle"(type: Download) {
+            src([
+                    "https://bitcoin.org/bin/bitcoin-core-${bitcoinVersion}/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
+            ])
+            println "DL  bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
+            overwrite false
+            dest file("bin/")
+        }
+
+        task "${platform.name}Jar"(group: "build (${platform.name})", type: Jar) {
+            from tasks.getByName("download${platform.name}Bundle")
+            println "PKG bin/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
+            //include "bin/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
+            appendix = "${platform.platform}"
+        }
+
+        artifacts.add('bundles', tasks.getByName("${platform.name}Jar"))
+    }
 }
 
 subprojects {
-    configurations {
-        published
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        from sourceSets.main.allSource
+        classifier = 'sources'
     }
-    dependencies {
-        testCompile 'junit:junit:4.7'
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        from javadoc.destinationDir
+        classifier = 'javadoc'
+    }
+
+    publishing {
+        publications {
+            configurations.bundles.artifacts.all { archive ->
+                def publicationName = archive.archiveTask.name - 'Jar'
+                "$publicationName"(MavenPublication) {
+                    artifactId "${archive.name}"
+                    configurePom(pom, artifactId, 'A lightweight bundle of bitcoind with reduced size')
+
+                    artifact archive
+                    artifact sourcesJar
+                    artifact javadocJar
+                }
+            }
+        }
     }
 }
 
-bintray {
-    user = project.hasProperty('bintray.user') ? project.property('bintray.user') : System.getenv('BINTRAY_USER')
-    key = project.hasProperty('bintray.apiKey') ? project.property('bintray.apiKey') : System.getenv('BINTRAY_API_KEY')
-    filesSpec {
-        from 'bin/'
-        into '.'
-    }
-    pkg {
-        repo = 'embedded-bitcoind-binaries'
-        userOrg = 'cryptocurrency-testing'
-        name = 'embedded-bitcoind-binaries'
-        desc = 'Embedded bitcoind binaries for tests'
-        licenses = ['MIT']
-        vcsUrl = 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries.git'
-        version {
-            name = project.version
+publishing {
+    publications {
+        bom(MavenPublication) {
+            artifactId 'embedded-bitcoind-binaries-bom'
+            configurePom(pom, artifactId, 'Bill of Materials')
+
+            pom.withXml {
+                def root = asNode()
+                root.children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+
+                    dependencyManagement {
+                        dependencies {
+                            project.subprojects.collectMany { it.configurations.bundles.artifacts }
+
+                                    .each { archive ->
+                                        dependency {
+                                            groupId "${project.group}"
+                                            artifactId "${archive.name}"
+                                            version "${project.version}"
+
+                                            if (!archive.name.contains('amd64') || archive.name.contains('lite')) {
+                                                optional 'true'
+                                            }
+                                        }
+                                    }
+                        }
+                    }
+                }
+            }
         }
+    }
+}
+
+allprojects {
+
+    bintray {
+        user = project.hasProperty('bintray.user') ? project.property('bintray.user') : System.getenv('BINTRAY_USER')
+        key = project.hasProperty('bintray.apiKey') ? project.property('bintray.apiKey') : System.getenv('BINTRAY_API_KEY')
+        publications = project.publishing.publications.findAll().collect { it.name }
+        pkg {
+            repo = 'embedded-bitcoind-binaries'
+            userOrg = 'cryptocurrency-testing'
+            name = 'embedded-bitcoind-binaries'
+            desc = 'Embedded bitcoind binaries for tests'
+            licenses = ['MIT']
+            vcsUrl = 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries.git'
+            version {
+                name = project.version
+            }
+        }
+    }
+
+    task install(group: 'publishing') {}
+
+    configurations.bundles.artifacts.all { archive ->
+        def publicationName = archive.archiveTask.name - 'Jar'
+
+        jar.dependsOn "${archive.archiveTask.name}"
+        test.dependsOn "test${archive.archiveTask.name.capitalize()}"
+        install.dependsOn "publish${publicationName.capitalize()}PublicationToMavenLocal"
+    }
+
+    task uploadArchives(group: 'publishing') {
+        dependsOn bintrayUpload
+    }
+
+    tasks.whenTaskAdded { task ->
+        if (task.name == 'publishBomPublicationToMavenLocal') {
+            install.dependsOn task
+        }
+    }
+}
+
+def configurePom(pom, artifact, desc) {
+    pom.withXml {
+        def root = asNode()
+
+        root.children().last() + {
+            resolveStrategy = Closure.DELEGATE_FIRST
+
+            name artifact
+            description desc
+            url 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries'
+
+            scm {
+                connection 'scm:git:git://github.com/cryptocurrency-testing/embedded-bitcoind-binaries.git'
+                developerConnection 'scm:git:ssh://github.com:cryptocurrency-testing/embedded-bitcoind-binaries.git'
+                url 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries/tree/master'
+            }
+
+            licenses {
+                license {
+                    name 'The MIT Licence'
+                    url 'https://opensource.org/licenses/MIT'
+                }
+            }
+
+            developers {
+                developer {
+                    name 'James Hilliard'
+                    email 'james.hilliard1@gmail.com'
+                }
+                developer {
+                    name 'Thomas Kerin'
+                    email 'me@thomaskerin.io'
+                }
+            }
+        }
+    }
+}
+
+class LazyExec extends AbstractExecTask<LazyExec> {
+    LazyExec() {
+        super(LazyExec.class)
+    }
+
+    @Override
+    LazyExec commandLine(Object... arguments) {
+        return super.commandLine(arguments.collect { argument ->
+            if (argument instanceof Closure) {
+                Closure closure = (Closure) argument;
+                return new Object() {
+                    @Override
+                    String toString() {
+                        return closure()
+                    }
+                }
+            } else {
+                return argument
+            }
+        }) as LazyExec
     }
 }
