@@ -32,7 +32,7 @@ allprojects {
     apply plugin: 'com.jfrog.bintray'
 
     group 'org.cryptocurrency-testing'
-    version = "0.0.2"
+    version = "$bitcoinVersion"
     archivesBaseName = "embedded-bitcoind-binaries"
     sourceCompatibility = 1.6
 
@@ -56,14 +56,12 @@ project(':bitcoind-artifacts') {
             src([
                     "https://bitcoin.org/bin/bitcoin-core-${bitcoinVersion}/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
             ])
-            println "DL  bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
             overwrite false
             dest file("bin/")
         }
 
         task "${platform.name}Jar"(group: "build (${platform.name})", type: Jar) {
             from tasks.getByName("download${platform.name}Bundle")
-            println "PKG bin/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
             //include "bin/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
             appendix = "${platform.platform}"
         }
@@ -149,6 +147,10 @@ allprojects {
             vcsUrl = 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries.git'
             version {
                 name = project.version
+                gpg {
+                    sign = true //Determines whether to GPG sign the files. The default is false
+                    passphrase = project.hasProperty('bintray.pgpPassphrase') ? project.property('bintray.pgpPassphrase') : System.getenv('BINTRAY_PGP_PASSPHRASE')
+                }
             }
         }
     }
