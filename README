@@ -1,0 +1,5 @@
+## embedded-bitcoind-binaries
+
+This project provides bitcoind as a resource so it can be used in tests
+
+
