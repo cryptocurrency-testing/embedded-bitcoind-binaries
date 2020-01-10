@@ -70,10 +70,12 @@ project(':bitcoind-artifacts') {
                 }
                 includeEmptyDirs = false  // (3)
             }
-            into project.file("${platform.name}/").canonicalPath
+            into project.file("${platform.name}/${platform.platform}/").canonicalPath
         }
         task "${platform.name}Jar"(group: "build (${platform.name})", type: Jar) {
-            from tasks.getByName("untar${platform.name}Bundle")
+            dependsOn "untar${platform.name}Bundle"
+            from project.file("./${platform.name}")
+            //tasks.getByName("untar${platform.name}Bundle")
             appendix = "${platform.platform}"
         }
 
