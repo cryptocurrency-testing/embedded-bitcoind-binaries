@@ -49,20 +49,33 @@ allprojects {
 
 project(':bitcoind-artifacts') {
     platformReleases.each { platform ->
-//        task "build${platform.name}Bundle"(group: "build (${platform.name})", type: Exec) {
-//            commandLine 'sh', "/usr/bin/wget", "https://bitcoin.org/bin/bitcoin-core-${bitcoinVersion}/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz -P bin/ \n"
-//        }
-        task "download${platform.name}Bundle"(type: Download) {
+        task "download${platform.name}Bundle"(group: "build (${platform.name})", type: Download) {
+            inputs.property("bitcoinVersion", bitcoinVersion)
+            inputs.property("platformName", platform.name)
+            outputs.file(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))
             src([
                     "https://bitcoin.org/bin/bitcoin-core-${bitcoinVersion}/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
             ])
             overwrite false
-            dest file("bin/")
+            dest project.file("./")
         }
+        task "untar${platform.name}Bundle"(group: "build (${platform.name})", type: Copy) {
+            inputs.file(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))
 
+            dependsOn "download${platform.name}Bundle"
+            from (tarTree(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))) {
+                include "bitcoin-${bitcoinVersion}/bin/**"
+                eachFile { fcd ->
+                    fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(1))  // (2)
+                }
+                includeEmptyDirs = false  // (3)
+            }
+            into project.file("${platform.name}/${platform.platform}/").canonicalPath
+        }
         task "${platform.name}Jar"(group: "build (${platform.name})", type: Jar) {
-            from tasks.getByName("download${platform.name}Bundle")
-            //include "bin/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
+            dependsOn "untar${platform.name}Bundle"
+            from project.file("./${platform.name}")
+            //tasks.getByName("untar${platform.name}Bundle")
             appendix = "${platform.platform}"
         }
 
@@ -161,7 +174,7 @@ allprojects {
         def publicationName = archive.archiveTask.name - 'Jar'
 
         jar.dependsOn "${archive.archiveTask.name}"
-        test.dependsOn "test${archive.archiveTask.name.capitalize()}"
+        //test.dependsOn "test${archive.archiveTask.name.capitalize()}"
         install.dependsOn "publish${publicationName.capitalize()}PublicationToMavenLocal"
     }
 
