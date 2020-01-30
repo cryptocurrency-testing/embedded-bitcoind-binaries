@@ -32,7 +32,7 @@ allprojects {
     apply plugin: 'com.jfrog.bintray'
 
     group 'org.cryptocurrency-testing'
-    version = "$bitcoinVersion"
+    version = "$bitcoinVersion-fromsrc"
     archivesBaseName = "embedded-bitcoind-binaries"
     sourceCompatibility = 1.6
 
@@ -49,37 +49,26 @@ allprojects {
 
 project(':bitcoind-artifacts') {
     platformReleases.each { platform ->
-        task "download${platform.name}Bundle"(group: "build (${platform.name})", type: Download) {
-            inputs.property("bitcoinVersion", bitcoinVersion)
-            inputs.property("platformName", platform.name)
-            outputs.file(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))
-            src([
-                    "https://bitcoin.org/bin/bitcoin-core-${bitcoinVersion}/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
-            ])
-            overwrite false
-            dest project.file("./")
+        task "build-${platform.name}"(group: "build (${platform.name})", type: Exec) {
+            workingDir "$buildDir"
+            executable "../../build-${platform.platform}.sh"
+            commandLine "../../build-${platform.platform}.sh", "v0.19.0.1-quiet-zmq"
+            outputs.dir(file("$buildDir/bitcoin"))
         }
-        task "untar${platform.name}Bundle"(group: "build (${platform.name})", type: Copy) {
-            inputs.file(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))
-
-            dependsOn "download${platform.name}Bundle"
-            from (tarTree(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))) {
-                include "bitcoin-${bitcoinVersion}/bin/**"
-                eachFile { fcd ->
-                    fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(1))  // (2)
-                }
-                includeEmptyDirs = false  // (3)
+        task "copy-bin-${platform.name}"(group: "build (${platform.name})", type: Copy) {
+            dependsOn "build-${platform.name}"
+            from('$buildDir/bitcoin') {
+                include 'src/bitcoind'
             }
-            into project.file("${platform.name}/${platform.platform}/").canonicalPath
+            into "$buildDir/${platform.name}"
         }
-        task "${platform.name}Jar"(group: "build (${platform.name})", type: Jar) {
-            dependsOn "untar${platform.name}Bundle"
-            from project.file("./${platform.name}")
-            //tasks.getByName("untar${platform.name}Bundle")
+        task "build-jar-${platform.name}"(group: "build (${platform.name})", type: Jar) {
+            dependsOn "copy-bin-${platform.name}"
+            from file("$buildDir/${platform.name}")
             appendix = "${platform.platform}"
         }
 
-        artifacts.add('bundles', tasks.getByName("${platform.name}Jar"))
+        artifacts.add('bundles', tasks.getByName("build-jar-${platform.name}"))
     }
 }
 
