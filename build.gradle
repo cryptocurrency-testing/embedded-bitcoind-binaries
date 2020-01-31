@@ -61,7 +61,7 @@ project(':bitcoind-artifacts') {
         outputs.dir(file("$buildDir/bitcoin"))
     }
     task "copy-bin-mac"(group: "build (mac)", type: Copy) {
-        dependsOn "build-${platform.name}"
+        dependsOn "build-mac"
         from('$buildDir/bitcoin') {
             include 'Bitcoin-Core.dmg'
         }
@@ -77,7 +77,7 @@ project(':bitcoind-artifacts') {
         from('$buildDir/bitcoin') {
             include 'src/bitcoind'
         }
-        into "$buildDir/${platform.name}"
+        into "$buildDir/linux"
     }
     task "build-jar-linux"(group: "build (linux)", type: Jar) {
         dependsOn "copy-bin-linux"
