@@ -48,40 +48,39 @@ allprojects {
 
 
 project(':bitcoind-artifacts') {
-    platformReleases.each { platform ->
-        task "build-${platform.name}"(group: "build (${platform.name})", type: Exec) {
-            workingDir "$buildDir"
-            executable "../../build-${platform.platform}.sh"
-            commandLine "../../build-${platform.platform}.sh", "v0.19.0.1-quiet-zmq"
-            outputs.dir(file("$buildDir/bitcoin"))
-        }
-        task "copy-bin-mac"(group: "build (mac", type: Copy) {
-            dependsOn "build-${platform.name}"
-            from('$buildDir/bitcoin') {
-                include 'Bitcoin-Core.dmg'
-            }
-            into "$buildDir/mac"
-        }
-        task "build-jar-mac"(group: "build (mac)", type: Jar) {
-            dependsOn "copy-bin-mac"
-            from file("$buildDir/mac")
-            appendix = "osx64"
-        }
-        task "copy-bin-linux"(group: "build (linux)", type: Copy) {
-            dependsOn "build-linux"
-            from('$buildDir/bitcoin') {
-                include 'src/bitcoind'
-            }
-            into "$buildDir/${platform.name}"
-        }
-        task "build-jar-linux"(group: "build (linux)", type: Jar) {
-            dependsOn "copy-bin-linux"
-            from file("$buildDir/linux")
-            appendix = "x86_64-linux-gnu"
-        }
-
-        artifacts.add('bundles', tasks.getByName("build-jar-${platform.name}"))
+    task "build-${platform.name}"(group: "build (${platform.name})", type: Exec) {
+        workingDir "$buildDir"
+        executable "../../build-${platform.platform}.sh"
+        commandLine "../../build-${platform.platform}.sh", "v0.19.0.1-quiet-zmq"
+        outputs.dir(file("$buildDir/bitcoin"))
     }
+    task "copy-bin-mac"(group: "build (mac)", type: Copy) {
+        dependsOn "build-${platform.name}"
+        from('$buildDir/bitcoin') {
+            include 'Bitcoin-Core.dmg'
+        }
+        into "$buildDir/mac"
+    }
+    task "build-jar-mac"(group: "build (mac)", type: Jar) {
+        dependsOn "copy-bin-mac"
+        from file("$buildDir/mac")
+        appendix = "osx64"
+    }
+    task "copy-bin-linux"(group: "build (linux)", type: Copy) {
+        dependsOn "build-linux"
+        from('$buildDir/bitcoin') {
+            include 'src/bitcoind'
+        }
+        into "$buildDir/${platform.name}"
+    }
+    task "build-jar-linux"(group: "build (linux)", type: Jar) {
+        dependsOn "copy-bin-linux"
+        from file("$buildDir/linux")
+        appendix = "x86_64-linux-gnu"
+    }
+
+    artifacts.add('bundles', tasks.getByName("build-jar-mac"))
+    artifacts.add('bundles', tasks.getByName("build-jar-linux"))
 }
 
 subprojects {
