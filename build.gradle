@@ -80,7 +80,7 @@ project(':bitcoind-artifacts') {
             include 'Bitcoin-Core.dmg'
         }
         into "$buildDir/mac"
-        outputs.dir(file("$buildDir/mac/Bitcoin-Core.dmg"))
+        outputs.file("$buildDir/mac/Bitcoin-Core.dmg")
     }
     task "build-jar-mac"(group: "build (mac)", type: Jar) {
         dependsOn "copy-bin-mac"
