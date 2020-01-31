@@ -56,11 +56,10 @@ project(':bitcoind-artifacts') {
     }
     task "copy-bin-linux"(group: "build (linux)", type: Copy) {
         dependsOn "build-linux"
-        from('$buildDir/bitcoin') {
+        from("$buildDir/bitcoin") {
             include 'src/bitcoind'
         }
         into "$buildDir/x86_64-linux-gnu"
-        outputs.dir(file("$buildDir/x86_64-linux-gnu/bitcoind"))
     }
     task "build-jar-linux"(group: "build (linux)", type: Jar) {
         dependsOn "copy-bin-linux"
