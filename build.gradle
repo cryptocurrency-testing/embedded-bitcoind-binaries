@@ -48,10 +48,16 @@ allprojects {
 
 
 project(':bitcoind-artifacts') {
-    task "build-${platform.name}"(group: "build (${platform.name})", type: Exec) {
+    task "build-linux"(group: "build (linux)", type: Exec) {
         workingDir "$buildDir"
-        executable "../../build-${platform.platform}.sh"
-        commandLine "../../build-${platform.platform}.sh", "v0.19.0.1-quiet-zmq"
+        executable "../../build-x86_64-linux-gnu.sh"
+        commandLine "../../build-x86_64-linux-gnu.sh", "v0.19.0.1-quiet-zmq"
+        outputs.dir(file("$buildDir/bitcoin"))
+    }
+    task "build-mac"(group: "build (mac)", type: Exec) {
+        workingDir "$buildDir"
+        executable "../../build-osx64.sh"
+        commandLine "../../build-osx64.sh", "v0.19.0.1-quiet-zmq"
         outputs.dir(file("$buildDir/bitcoin"))
     }
     task "copy-bin-mac"(group: "build (mac)", type: Copy) {
