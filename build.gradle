@@ -56,10 +56,10 @@ project(':bitcoind-artifacts') {
     }
     task "copy-bin-linux"(group: "build (linux)", type: Copy) {
         dependsOn "build-linux"
-        from("$buildDir/bitcoin") {
-            include 'src/bitcoind'
+        from("$buildDir/bitcoin/src") {
+            include 'bitcoind'
         }
-        into "$buildDir/linux/x86_64-linux-gnu"
+        into "$buildDir/linux/x86_64-linux-gnu/bin"
     }
     task "build-jar-linux"(group: "build (linux)", type: Jar) {
         dependsOn "copy-bin-linux"
@@ -75,10 +75,10 @@ project(':bitcoind-artifacts') {
     }
     task "copy-bin-mac"(group: "build (mac)", type: Copy) {
         dependsOn "build-mac"
-        from("$buildDir/bitcoin") {
-            include 'src/bitcoind'
+        from("$buildDir/bitcoin/src") {
+            include 'bitcoind'
         }
-        into "$buildDir/mac/osx64"
+        into "$buildDir/mac/osx64/bin"
     }
     task "build-jar-mac"(group: "build (mac)", type: Jar) {
         dependsOn "copy-bin-mac"
