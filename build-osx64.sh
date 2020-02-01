@@ -10,4 +10,3 @@ make -j2 -C depends HOST=$host NO_UPNP=1
 ./autogen.sh
 ./configure --with-incompatible-bdb --disable-bench --disable-tests --with-zmq --host=$host --prefix=$PWD/depends/$host
 make -j2 HOST=$host
-make deploy
