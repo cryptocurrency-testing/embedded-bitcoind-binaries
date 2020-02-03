@@ -45,9 +45,43 @@ allprojects {
     }
 }
 
+project(':from-dist') {
+    platformReleases.each { platform ->
+        task "download${platform.name}Bundle"(group: "build (${platform.name})", type: Download) {
+            inputs.property("bitcoinVersion", bitcoinVersion)
+            inputs.property("platformName", platform.name)
+            outputs.file(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))
+            src([
+                    "https://bitcoin.org/bin/bitcoin-core-${bitcoinVersion}/bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"
+            ])
+            overwrite false
+            dest project.file("./")
+        }
+        task "untar${platform.name}Bundle"(group: "build (${platform.name})", type: Copy) {
+            inputs.file(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))
 
+            dependsOn "download${platform.name}Bundle"
+            from (tarTree(project.file("bitcoin-${bitcoinVersion}-${platform.platform}.tar.gz"))) {
+                include "bitcoin-${bitcoinVersion}/bin/**"
+                eachFile { fcd ->
+                    fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(1))  // (2)
+                }
+                includeEmptyDirs = false  // (3)
+            }
+            into project.file("${platform.name}/${platform.platform}/").canonicalPath
+        }
+        task "${platform.name}Jar"(group: "build (${platform.name})", type: Jar) {
+            dependsOn "untar${platform.name}Bundle"
+            from project.file("./${platform.name}")
+            //tasks.getByName("untar${platform.name}Bundle")
+            appendix = "${platform.platform}"
+        }
 
-project(':bitcoind-artifacts') {
+        artifacts.add('bundles', tasks.getByName("${platform.name}Jar"))
+    }
+}
+
+project(':from-source') {
     task "build-linux"(group: "build (linux)", type: Exec) {
         workingDir "$buildDir"
         executable "../../build-x86_64-linux-gnu.sh"
