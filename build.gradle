@@ -29,9 +29,10 @@ allprojects {
     apply plugin: 'java'
     //apply plugin: 'maven'
     apply plugin: 'maven-publish'
-    apply plugin: 'com.jfrog.bintray'
+//    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'signing'
 
-    group 'org.cryptocurrency-testing'
+    group 'com.github.cryptocurrency-testing'
     version = "$bitcoinVersion-fromsrc"
     archivesBaseName = "embedded-bitcoind-binaries"
     sourceCompatibility = 1.6
@@ -90,6 +91,7 @@ project(':bitcoind-artifacts') {
 }
 
 subprojects {
+    apply plugin: "maven-publish"
     task sourcesJar(type: Jar, dependsOn: classes) {
         from sourceSets.main.allSource
         classifier = 'sources'
@@ -101,6 +103,17 @@ subprojects {
     }
 
     publishing {
+        repositories {
+            maven {
+                name = "OSSRH"
+                url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+
+                credentials {
+                    username = project.hasProperty('maven.username') ? project.property('maven.username') : System.getenv('MAVEN_USERNAME')
+                    password = project.hasProperty('maven.password') ? project.property('maven.password') : System.getenv('MAVEN_PASSWORD')
+                }
+            }
+        }
         publications {
             configurations.bundles.artifacts.all { archive ->
                 def publicationName = archive.archiveTask.name - 'Jar'
@@ -118,6 +131,17 @@ subprojects {
 }
 
 publishing {
+    repositories {
+        maven {
+            name = "OSSRH"
+            url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+
+            credentials {
+                username = project.hasProperty('maven.username') ? project.property('maven.username') : System.getenv('MAVEN_USERNAME')
+                password = project.hasProperty('maven.password') ? project.property('maven.password') : System.getenv('MAVEN_PASSWORD')
+            }
+        }
+    }
     publications {
         bom(MavenPublication) {
             artifactId 'embedded-bitcoind-binaries-bom'
@@ -150,29 +174,31 @@ publishing {
         }
     }
 }
-
+signing {
+    sign publishing.publications
+}
 allprojects {
 
-    bintray {
-        user = project.hasProperty('bintray.user') ? project.property('bintray.user') : System.getenv('BINTRAY_USER')
-        key = project.hasProperty('bintray.apiKey') ? project.property('bintray.apiKey') : System.getenv('BINTRAY_API_KEY')
-        publications = project.publishing.publications.findAll().collect { it.name }
-        pkg {
-            repo = 'embedded-bitcoind-binaries'
-            userOrg = 'cryptocurrency-testing'
-            name = 'embedded-bitcoind-binaries'
-            desc = 'Embedded bitcoind binaries for tests'
-            licenses = ['MIT']
-            vcsUrl = 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries.git'
-            version {
-                name = project.version
-                gpg {
-                    sign = true //Determines whether to GPG sign the files. The default is false
-                    passphrase = project.hasProperty('bintray.pgpPassphrase') ? project.property('bintray.pgpPassphrase') : System.getenv('BINTRAY_PGP_PASSPHRASE')
-                }
-            }
-        }
-    }
+//    bintray {
+//        user = project.hasProperty('bintray.user') ? project.property('bintray.user') : System.getenv('BINTRAY_USER')
+//        key = project.hasProperty('bintray.apiKey') ? project.property('bintray.apiKey') : System.getenv('BINTRAY_API_KEY')
+//        publications = project.publishing.publications.findAll().collect { it.name }
+//        pkg {
+//            repo = 'embedded-bitcoind-binaries'
+//            userOrg = 'cryptocurrency-testing'
+//            name = 'embedded-bitcoind-binaries'
+//            desc = 'Embedded bitcoind binaries for tests'
+//            licenses = ['MIT']
+//            vcsUrl = 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries.git'
+//            version {
+//                name = project.version
+//                gpg {
+//                    sign = true //Determines whether to GPG sign the files. The default is false
+//                    passphrase = project.hasProperty('bintray.pgpPassphrase') ? project.property('bintray.pgpPassphrase') : System.getenv('BINTRAY_PGP_PASSPHRASE')
+//                }
+//            }
+//        }
+//    }
 
     task install(group: 'publishing') {}
 
@@ -184,9 +210,9 @@ allprojects {
         install.dependsOn "publish${publicationName.capitalize()}PublicationToMavenLocal"
     }
 
-    task uploadArchives(group: 'publishing') {
-        dependsOn bintrayUpload
-    }
+//    task uploadArchives(group: 'publishing') {
+//        dependsOn bintrayUpload
+//    }
 
     tasks.whenTaskAdded { task ->
         if (task.name == 'publishBomPublicationToMavenLocal') {
