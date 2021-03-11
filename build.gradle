@@ -92,6 +92,7 @@ project(':bitcoind-artifacts') {
 
 subprojects {
     apply plugin: "maven-publish"
+    apply plugin: "signing"
     task sourcesJar(type: Jar, dependsOn: classes) {
         from sourceSets.main.allSource
         classifier = 'sources'
