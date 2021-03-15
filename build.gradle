@@ -52,7 +52,7 @@ project(':bitcoind-artifacts') {
     task "build-linux"(group: "build (linux)", type: Exec) {
         workingDir "$buildDir"
         executable "../../build-x86_64-linux-gnu.sh"
-        commandLine "../../build-x86_64-linux-gnu.sh", "v0.19.0.1-quiet-zmq"
+        commandLine "../../build-x86_64-linux-gnu.sh", "v$bitcoinVersion-quiet-zmq"
         outputs.dir(file("$buildDir/bitcoin"))
     }
     task "copy-bin-linux"(group: "build (linux)", type: Copy) {
