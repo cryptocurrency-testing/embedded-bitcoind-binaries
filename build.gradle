@@ -27,9 +27,7 @@ def bitcoinVersion = "0.19.0.1"
 
 allprojects {
     apply plugin: 'java'
-    //apply plugin: 'maven'
     apply plugin: 'maven-publish'
-//    apply plugin: 'com.jfrog.bintray'
     apply plugin: 'signing'
 
     group 'com.github.cryptocurrency-testing'
@@ -182,28 +180,6 @@ signing {
     sign publishing.publications
 }
 allprojects {
-
-//    bintray {
-//        user = project.hasProperty('bintray.user') ? project.property('bintray.user') : System.getenv('BINTRAY_USER')
-//        key = project.hasProperty('bintray.apiKey') ? project.property('bintray.apiKey') : System.getenv('BINTRAY_API_KEY')
-//        publications = project.publishing.publications.findAll().collect { it.name }
-//        pkg {
-//            repo = 'embedded-bitcoind-binaries'
-//            userOrg = 'cryptocurrency-testing'
-//            name = 'embedded-bitcoind-binaries'
-//            desc = 'Embedded bitcoind binaries for tests'
-//            licenses = ['MIT']
-//            vcsUrl = 'https://github.com/cryptocurrency-testing/embedded-bitcoind-binaries.git'
-//            version {
-//                name = project.version
-//                gpg {
-//                    sign = true //Determines whether to GPG sign the files. The default is false
-//                    passphrase = project.hasProperty('bintray.pgpPassphrase') ? project.property('bintray.pgpPassphrase') : System.getenv('BINTRAY_PGP_PASSPHRASE')
-//                }
-//            }
-//        }
-//    }
-
     task install(group: 'publishing') {}
 
     configurations.bundles.artifacts.all { archive ->
@@ -213,10 +189,6 @@ allprojects {
         //test.dependsOn "test${archive.archiveTask.name.capitalize()}"
         install.dependsOn "publish${publicationName.capitalize()}PublicationToMavenLocal"
     }
-
-//    task uploadArchives(group: 'publishing') {
-//        dependsOn bintrayUpload
-//    }
 
     tasks.whenTaskAdded { task ->
         if (task.name == 'publishBomPublicationToMavenLocal') {
