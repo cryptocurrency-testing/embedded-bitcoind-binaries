@@ -23,7 +23,7 @@ def platformReleases = [
                 "platform": "x86_64-linux-gnu",
         ],
 ]
-def bitcoinVersion = "0.19.0.1"
+def bitcoinVersion = "0.21.0"
 
 allprojects {
     apply plugin: 'java'
