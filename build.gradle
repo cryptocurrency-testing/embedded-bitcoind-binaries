@@ -23,7 +23,9 @@ def platformReleases = [
                 "platform": "x86_64-linux-gnu",
         ],
 ]
-def bitcoinVersion = "0.21.0"
+def bitcoinVersion = "0.18.1"
+def networkName = "litecoin"
+def buildRepo = "https://github.com/cryptocurrency-testing/litecoin"
 
 allprojects {
     apply plugin: 'java'
@@ -50,39 +52,39 @@ project(':bitcoind-artifacts') {
     task "build-linux"(group: "build (linux)", type: Exec) {
         workingDir "$buildDir"
         executable "../../build-x86_64-linux-gnu.sh"
-        commandLine "../../build-x86_64-linux-gnu.sh", "v$bitcoinVersion-quiet-zmq"
-        outputs.dir(file("$buildDir/bitcoin"))
+        commandLine "../../build-x86_64-linux-gnu.sh", "v$bitcoinVersion-quiet-zmq", "$buildRepo", "$networkName"
+        outputs.dir(file("$buildDir/$networkName"))
     }
     task "copy-bin-linux"(group: "build (linux)", type: Copy) {
         dependsOn "build-linux"
-        from("$buildDir/bitcoin/src") {
-            include 'bitcoind'
+        from("$buildDir/$networkName/src") {
+            include "$networkName"+'d'
         }
         into "$buildDir/linux/x86_64-linux-gnu/bin"
     }
     task "linuxJar"(group: "build (linux)", type: Jar) {
         dependsOn "copy-bin-linux"
         from file("$buildDir/linux")
-        appendix = "x86_64-linux-gnu"
+        appendix = "-$networkName-x86_64-linux-gnu"
     }
 
     task "build-mac"(group: "build (mac)", type: Exec) {
         workingDir "$buildDir"
         executable "../../build-osx64.sh"
-        commandLine "../../build-osx64.sh", "v0.19.0.1-quiet-zmq"
-        outputs.dir(file("$buildDir/bitcoin"))
+        commandLine "../../build-osx64.sh", "v$bitcoinVersion-quiet-zmq", "$buildRepo", "$networkName"
+        outputs.dir(file("$buildDir/$networkName"))
     }
     task "copy-bin-mac"(group: "build (mac)", type: Copy) {
         dependsOn "build-mac"
-        from("$buildDir/bitcoin/src") {
-            include 'bitcoind'
+        from("$buildDir/$networkName/src") {
+            include "$networkName"+'d'
         }
         into "$buildDir/mac/osx64/bin"
     }
     task "macJar"(group: "build (mac)", type: Jar) {
         dependsOn "copy-bin-mac"
         from file("$buildDir/mac")
-        appendix = "osx64"
+        appendix = "-$networkName-osx64"
     }
     artifacts.add('bundles', tasks.getByName("macJar"))
     artifacts.add('bundles', tasks.getByName("linuxJar"))

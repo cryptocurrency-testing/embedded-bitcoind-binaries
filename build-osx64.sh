@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 
 host=x86_64-apple-darwin11
-rm -rf bitcoin
-git clone https://github.com/cryptocurrency-testing/bitcoin -b $1
-cd bitcoin
+build_dir=$3
+repo=$2
+version=$1
+
+rm -rf $build_dir
+git clone $repo -b $version
+cd $build_dir
+
+
 mkdir -p depends/SDKs/
 cp -R ../../../MacOSX10.11.sdk depends/SDKs/
 ls -lsaht depends/SDKs

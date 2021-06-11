@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
 host=x86_64-linux-gnu
-rm -rf bitcoin
-git clone https://github.com/cryptocurrency-testing/bitcoin -b $1
-cd bitcoin
+build_dir=$3
+repo=$2
+version=$1
+
+rm -rf $build_dir
+git clone $repo -b $version
+cd $build_dir
 make -C depends HOST=$host NO_UPNP=1 NO_QT=1
 if [ $? != 0 ]; then
     echo "Error: make depends failed"
