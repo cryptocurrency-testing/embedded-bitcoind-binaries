@@ -65,7 +65,7 @@ project(':bitcoind-artifacts') {
     task "linuxJar"(group: "build (linux)", type: Jar) {
         dependsOn "copy-bin-linux"
         from file("$buildDir/linux")
-        appendix = "-$networkName-x86_64-linux-gnu"
+        appendix = "$networkName-x86_64-linux-gnu"
     }
 
     task "build-mac"(group: "build (mac)", type: Exec) {
@@ -84,7 +84,7 @@ project(':bitcoind-artifacts') {
     task "macJar"(group: "build (mac)", type: Jar) {
         dependsOn "copy-bin-mac"
         from file("$buildDir/mac")
-        appendix = "-$networkName-osx64"
+        appendix = "$networkName-osx64"
     }
     artifacts.add('bundles', tasks.getByName("macJar"))
     artifacts.add('bundles', tasks.getByName("linuxJar"))
