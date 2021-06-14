@@ -148,7 +148,7 @@ publishing {
     }
     publications {
         bom(MavenPublication) {
-            artifactId 'embedded-bitcoind-binaries-$networkName-bom'
+            artifactId "embedded-bitcoind-binaries-$networkName-bom"
             configurePom(pom, artifactId, 'Bill of Materials')
 
             pom.withXml {
